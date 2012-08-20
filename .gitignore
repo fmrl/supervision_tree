@@ -7,8 +7,8 @@ attic
 bin/rake
 bin/rubrstmp
 build
-lib/*/doc
-lib/*/ebin
+doc
+ebin
 vendor/bundle
 
 # specific to this project.
