@@ -1,0 +1,287 @@
+** $vim:23: vim:set sts=3 sw=3 et:,$ **
+
+@author Michael Lowell Roberts  <mlr@fmrl.org>
+@copyright 2012 Michael Lowell Roberts
+@version {@version}
+@title supervision_tree
+@todo switch from supervision_tree to supervision_tree, to match terminology
+in the documentation.
+@doc supervision trees lie at the heart of fault tolerance and error handling in
+Erlang. unfortunately, they're inconvenient to maintain due to the fact that
+they require the programmer to create a module for each node on the tree.
+
+<em>supervision_tree</em> is an Erlang module that enables the creation of
+arbitrarily complex supervision trees from a single specification which can be
+stored within a single file.
+
+additionally, <em>supervision_tree</em> brings the convenience of
+modularlization of the supervision tree by supporting an additional child
+specification for other supervision trees. 
+
+== node specifications ==
+
+a supervision tree specification is a tree of node specifications. a node
+specification consists of a tuple whose form is dependent upon the tuple's tag.
+the following table describes the types of node specifications that are
+recognized.
+
+<table>
+<tr>
+   <td><b>type</b></td>
+   <td><b>form</b></td>
+   <td><b>comments</b></td>
+</tr>
+<tr>
+   <td>worker process</td>
+   <td>`{worker, StartUsing, Options}'</td>
+   <td>instructs {@link supervision_tree:init/1} to start a <em>worker
+      process</em>, as defined by behaviors such as <em>gen_server</em> or
+      <em>gen_fsm</em>.
+      <ul>
+         <li>`StartUsing' represents a tuple of the form 
+            `{Module, Function, Args}' (i.e. `{gen_server, start_link, 
+            [{local, happy_cat}, CallbackModule, cheezburger, []}').</li>
+         <li>`Options' represents a list of options for this node. see
+            {@section node specification options} for more details.</li>
+      </ul></td>
+</tr>
+<tr>
+   <td>supervisor process</td>
+   <td>`{supervisor, Options, Children}'</td>
+   <td>instructs @{link supervision_tree:init/1} to start a <em>supervisor
+      process</em>, as defined by the <em>supervisor</em> behavior. 
+      <ul>
+         <li>`Options' represents a list of options for this node. see
+            {@section node specification options} for more details.</li>
+         <li>`Children' represents a list of node specifications intended to
+            be children of this node in the supervision tree.</li>
+      </ul></td>
+</tr>
+<tr>
+   <td>subordinate supervison tree</td>
+   <td>`{supervision_tree, Module::atom(), Options, Children}'</td>
+   <td>instructs {@link supervision_tree:init/1} to start a subordinate
+      <em>supervision tree process</em>, as defined by the
+      <em>supervision_tree</em> module. 
+      <ul>
+         <li>`Module' represents the module that builds the supervision tree.
+            currently, it is expected to export function `start_link/2', 
+            which is expected to behave similarly to {@link
+            supervision_tree:start_link/2}.  </li>
+         <li>`Options' represents a list of options for this node. see 
+            {@section node specification options} for more details.</li>
+         <li>`Children' represents a list of node specifications intended to
+            be children of this node in the supervision tree.</li>
+      </ul></td>
+</tr>
+<tr>
+<td>gen_event manager process (untested)</td>
+<td>`{gen_event_manager, StartUsing, Options}'</td>
+</tr>
+</table>
+
+== node specification options ==
+
+<table>
+<tr>
+   <td><b>form</b></td>
+   <td><b>description</b></td>
+   <td><b>implied behavior</b></td>
+   <td><b>default form</b></td>
+</tr>
+<tr>
+   <td>`{restart_strategy, Strategy::atom()}'</td>
+   <td>an atom describing the supervisor's restart strategy, as defined in the
+      <a href='http://www.erlang.org/doc/man/supervisor.html'>supervisor man
+      page</a>. acceptable values, at the time of writing this document, are:
+      <ul><li>`one_for_one'</li>
+         <li>`one_for_all'</li>
+         <li>`rest_for_one'</li>
+         <li>`simple_one_for_one'</li>
+      </ul></td>
+   <td>behave as defined in the <em>supervision_tree</em> application's 
+      `default_restart_strategy' environment variable.</td>
+   <td>`{restart_strategy, one_for_one}'</td>
+</tr>
+<tr>
+   <td>`{maximum_restart_frequency, 
+      {{restarts, N}, per, Duration::measurement:duration()}}'</td>
+   <td>a tuple describing the supervisor's maximum restart frequency, as defined
+      in the <a href='http://www.erlang.org/doc/man/supervisor.html'>supervisor 
+      man page</a>.</td>
+   <td>behave as defined in the <em>supervision_tree</em> application's 
+      `default_maximum_restart_frequency' environment variable.</td>
+   <td>`{{restarts, 1000}, per, {hours, 1}}'</td>
+</tr>
+<tr>
+   <td>`{restart, Restart::atom()}'</td>
+   <td>an atom describing "when a terminated process should be restarted," 
+      as defined in the <a href='http://www.erlang.org/doc/man/supervisor.html'>
+      supervisor man page</a>. acceptable values, at the time of writing this 
+      document, are:
+      <ul><li>`permanent'</li>
+         <li>`temporary'</li>
+         <li>`transient'</li>
+      </ul></td>
+   <td>behave as defined in the <em>supervision_tree</em> application's 
+      `default_restart' environment variable.</td>
+   <td>`{restart, permanent}'</td>
+</tr>
+<tr>
+   <td>`{shutdown, Shutdown::shutdown()}'</td>
+   <td>an atom describing "how a child should be terminated," 
+      as defined in the <a href='http://www.erlang.org/doc/man/supervisor.html'>
+      supervisor man page</a>. acceptable values, at the time of writing this 
+      document, are:
+      <ul>
+         <li>`{wait, Duration::duration()}' instructs the node to wait up to a
+            specified duration of time (i.e. `Duration') for the child to exit
+            normally. the duration of time may be specified with a unit of time
+            that is deemed convenient by the programmer. </li>
+         <li>`kill' instructs the node to kill the child immediately, without
+            waiting for a normal exit process to complete.</li>
+      </ul>
+      see the <a href='http://www.erlang.org/doc/man/supervisor.html'>supervisor 
+      man page</a> for more details.</td>
+   <td>behave as defined in the <em>supervision_tree</em> application's 
+      `default_shutdown' environment variable.</td>
+   <td>`{shutdown, {wait, {seconds, 2}}}'</td>
+</tr>
+<tr>
+   <td>`{registered_supervisor, Name}'</td>
+   <td>a tuple describing how a supervisor should be registered as described
+      in the documentation for 
+      <a href='http://www.erlang.org/doc/man/supervisor.html'>
+      supervisor:start_link/3</a>. acceptable values, at the time of writing 
+      this document, are:
+      <ul>
+         <li>`{local, Local}' instructs the node to register the supervisor
+            with a local erlang node.</li>
+         <li>`{global, Global}' instructs the node to register the supervisor
+            with a distributed erlang cluster.</li>
+         <li>`{via, Via}' instructs the node to register the supervisor
+            through a user-defined machanism.</li>
+      </ul>
+
+      note that this option is not recognized on nodes other than `supervisor'
+      nodes. 
+      
+      see the documentation for 
+      <a href='http://www.erlang.org/doc/man/supervisor.html'>
+      supervisor:start_link/3</a> for more details.</td>
+   <td>supervisor is not registered.</td>
+   <td>none.</td>
+</tr>
+<tr>
+   <td>`{start_using, {Module, Function, Args}}'</td>
+   <td>a tuple describing how to start a supervisor, if supervisor:start_link/2
+      and supervisor:start_link/3 are not to be used.
+
+      note that this option is not recognized on nodes other than `supervisor'
+      nodes.</td>
+   <td>use supervisor:start_link/2 or supervisor:start_link/3, depending upon
+      whether the `registered_supervisor' option is specified.</td>
+   <td>none.</td>
+</tr>
+<tr>
+   <td>`{callback_module, Module::atom()}'</td>
+   <td>an atom specifying the name of the callback module for the node in 
+      question.</td>
+   <td>if the start function specified belongs to a known module (i.e.
+      <em>gen_server</em>, <em>gen_fsm</em>, or <em>supervisor)</em>, search 
+      the arguments for the name of the callback module. otherwise, use the 
+      module that the start function belongs to.</td>
+   <td>none.</td>
+</tr>
+<tr>
+<tr>
+   <td>`{id, Id::atom()}'</td>
+   <td>an atom specifying the id of child, i.e. a name that the child's
+      supervisor can use to identify it uniquely amongst its siblings.</td>
+   <td>use the callback module name.</td>
+   <td>none.</td>
+</tr>
+</tr>
+</table>
+
+== example ==
+
+a <em>process pool</em> consists of two supervisors, a process that creates, 
+monitors, and dispatches messages to dynamically created children, and its 
+dynamically created children. normally, this would consist of three files:
+
+```
+% process_pool_top.erl (abbreviated).
+-module(process_pool_top).
+-behavior(supervisor).
+
+init(Module) ->
+   Dispatch = {dispatch, },
+   Governess = {governess, },
+   {...one_for_all, [Governess, Dispatch]}.
+'''
+```
+% process_pool_governess.erl (abbreviated).
+-module(process_pool_governess).
+-behavior(supervisor).
+
+init(Module) ->
+   {...simple_one_for_one, []}.
+'''
+```
+% process_pool_dispatchy.erl (abbreviated).
+-module(process_pool_dispatch).
+-behavior(gen_server).
+
+handle_cast({start_child, Name}, State) ->
+   % ...
+'''
+
+often, the principle of least effort governs how programmers choose to shape
+their code. healthy refactoring of supervision trees may be cast aside when
+programmers are required to create and delete the files necessary to represent
+nodes in the traditional manner. with supervision_tree, the preceeding example
+is equivalently represented with the following code, contained within a single
+file:
+
+```
+% process_pool.erl (abbreviated).
+-module(process_pool).
+-behaviour(gen_server).
+
+start_link(Options, [Child]) ->
+   {ok, PoolPid} = supervision_tree:start_link(Options,
+      [{supervisor,
+            [{name, governess},
+               {restart_strategy, simple_one_for_one}],
+            [Child]},
+         {worker, {gen_server, start_link, [process_pool, unused, []]},
+            [{name, dispatch}]}]),
+   ok = gen_server:cast(find_dispatch(PoolPid), {initialize, PoolPid}),
+   {ok, PoolPid}.
+
+handle_call({start_child, Name, Args}, _From, State0) ->
+   % ...
+'''
+
+== status ==
+
+when using <em>supervision_tree</em>, please consider that it is still under 
+active development. i may have not tested all use cases yet. 
+
+the interface might change as i continue to explore the use of this technique. 
+
+== license ==
+
+<em>supervision_tree</em> is provided under the <em>New BSD License</em>.
+
+this means that you are free to use <em>supervision_tree</em> for any purpose you 
+see fit, as long as you give proper credit for my work.
+
+you're not required to distribute source code if you use 
+<em>supervision_tree</em>. if you don't, you can satisfy the credit requirement
+by crediting me in the about box (in a GUI application), a usage message (in a
+command-line application), or in a credits list (in a game).
+
+see [the LICENSE file][4] in the source distribution for more details.
+

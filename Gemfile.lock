@@ -1,0 +1,21 @@
+GIT
+  remote: git://github.com/fmrl/rubrstmp.git
+  revision: 43742af20134b0c540b0ddcc0232eafff62e1ca3
+  specs:
+    rubrstmp (0.1.0)
+      case
+      ptools
+
+GEM
+  remote: http://www.rubygems.org/
+  specs:
+    case (0.5.2.1)
+    ptools (1.2.2)
+    rake (0.9.2.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  rake
+  rubrstmp!
