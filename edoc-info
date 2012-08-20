@@ -1,0 +1,3 @@
+{application,supervision_tree}.
+{packages,[]}.
+{modules,[supervision_tree,supervision_tree_misc,supervision_tree_test]}.
