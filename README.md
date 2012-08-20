@@ -10,7 +10,7 @@ overview
 
 you can find a recent build of the API documentation [here][gh-pages].
 
-while it functions well enough for my own use, i am still developing it, so please consider the API unstable for the moment.
+i am still developing *supervision_tree*, so please consider the API unstable for the moment.
 
 license
 -------
