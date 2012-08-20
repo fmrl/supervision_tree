@@ -9,12 +9,8 @@ bin/rubrstmp
 build
 doc
 ebin
+gh-pages
 vendor/bundle
 
 # specific to this project.
 
-
-# [mlr] i'm using the c_priv directory to stage installations of C/C++
-# for the moment. this may not be the case long-term but an ignore entry
-# is necessary for the moment.
-c_priv

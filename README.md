@@ -8,6 +8,8 @@ overview
 
 **supervision_tree** makes it possible to specify supervision trees programmatically, with a single source file. it also provides a facility for modular supervision trees.
 
+you can find a recent build of the API documentation [here][gh-pages].
+
 while it functions well enough for my own use, i am still developing it, so please consider the API unstable for the moment.
 
 license
@@ -30,4 +32,6 @@ all rights reserved.
 [bsd-license]: http://github.com/fmrl/supervision_tree/blob/master/LICENSE.md
 [cc-license]: http://creativecommons.org/licenses/by/3.0/
 [fmrl]: http://fmrl.org
+[gh-pages]: http://fmrl.github.com/supervision_tree/
+
 

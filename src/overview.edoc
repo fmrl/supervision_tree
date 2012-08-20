@@ -283,5 +283,7 @@ you're not required to distribute source code if you use
 by crediting me in the about box (in a GUI application), a usage message (in a
 command-line application), or in a credits list (in a game).
 
-see [the LICENSE file][4] in the source distribution for more details.
+see <a
+href='http://github.com/fmrl/supervision_tree/blob/master/LICENSE.md'>the
+license notice</a> in the source distribution for more details.
 
